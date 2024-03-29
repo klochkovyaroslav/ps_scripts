@@ -1,6 +1,6 @@
 DECLARE @ServerName NVARCHAR(256)  = @@SERVERNAME 
 DECLARE @RoleDesc NVARCHAR(60)
-DECLARE @DBName NVARCHAR(200)= 'PER'
+DECLARE @DBName NVARCHAR(200)= 'PSC'
 DECLARE @BackupPath1 NVARCHAR(200)='Y:\'+@DBName+'\'+ @DBName+'_FULL_1_' + REPLACE(convert(nvarchar(20),GetDate(),120),':','-') + '.bak'
 DECLARE @BackupPath2 NVARCHAR(200)='Z:\'+@DBName+'\'+ @DBName+'_FULL_2_' + REPLACE(convert(nvarchar(20),GetDate(),120),':','-') + '.bak'
 DECLARE @NameJob NVARCHAR(200)= @DBName+'-Full Database Backup'

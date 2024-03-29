@@ -1,10 +1,10 @@
 ﻿$NameDB="PSC"
 
-$rezult_FO = "C:\Scripts\PHYSICAL_ONLY_rezult.txt"
-$rezult_EL = "C:\Scripts\EXTENDED_LOGICAL_rezult.txt"
-$tmp_f = "C:\Scripts\tmp.txt"
-$rest_db = "C:\Scripts\restore_db.sql"
-$rezult = "C:\Scripts\RESTORE_SQL_REZULT.txt"
+$rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
+$rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
+$tmp_f = $PSScriptRoot+"\tmp.txt"
+$rest_db = $PSScriptRoot+"\restore_db.sql"
+$rezult = $PSScriptRoot+"\RESTORE_SQL_REZULT.txt"
 $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
@@ -12,7 +12,7 @@ $ErrorActionPreference= "stop"
 
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
-$Logfile = "C:\Scripts\DB_RESTORE_CHECKDB_LOG.txt"
+$Logfile = $PSScriptRoot+"\DB_RESTORE_CHECKDB_LOG.txt"
 function WriteLog
 {
     Param ([string]$LogString)

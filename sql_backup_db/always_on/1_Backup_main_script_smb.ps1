@@ -1,6 +1,6 @@
-﻿#### Скрирт для запуска на ноде кластера Always On ---ERP-PRD-DB1---####
-$remote_host="ERP-PRD-DB2"
-$NameDB="PER"
+﻿#### Скрирт для запуска на ноде кластера Always On ---SQL-TST-DB1---####
+$remote_host="SQL-TST-DB2"
+$NameDB="PSC"
 
 
 

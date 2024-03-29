@@ -1,4 +1,4 @@
-DECLARE @DBName NVARCHAR(200)= 'PER'
+DECLARE @DBName NVARCHAR(200)= 'PSC'
 DECLARE @ServerName NVARCHAR(256)  = @@SERVERNAME 
 DECLARE @RoleDesc NVARCHAR(60)
 DECLARE @BackupPath NVARCHAR(200)='W:\'+@DBName+'\'+ @DBName+'_LOG_' + REPLACE(convert(nvarchar(20),GetDate(),120),':','-') + '.trn'
