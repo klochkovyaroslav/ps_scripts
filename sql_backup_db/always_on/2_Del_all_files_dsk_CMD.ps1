@@ -1,5 +1,5 @@
 ﻿#### Скрирт для запуска на ноде кластера Always On - !!!---Если установлен ---Касперский KES--- ####
-$NameDB="PER"
+$NameDB="PSC"
 
 $path_backup_files_Y="Y:\$NameDB\" #Путь до директории с файлами бэкапа
 $path_backup_files_Z="Z:\$NameDB\"
@@ -11,10 +11,10 @@ $date_backup = Get-Date
 $ErrorActionPreference= "stop"
 
 
-# Удаляем все файлы с диска W:\PER
+# Удаляем все файлы с диска W:\PSC
 (Get-Date).ToString()+" операция: - удаление всех файлов с диска W:\$NameDB " | out-file -Filepath $path_backup_log -append
 
-# Проверяем существует ли путь W:\PER
+# Проверяем существует ли путь W:\PSC
 if (test-path $path_backup_files_W)
 {          
 
@@ -25,7 +25,7 @@ if (test-path $path_backup_files_W)
 
 Else
 {
-    # Если не существует путь W:\PER
+    # Если не существует путь W:\PSC
     (Get-Date).ToString()+" - Директория W:\$NameDB : Не существует, будет создана" | out-file -Filepath $path_backup_log -append
     New-Item -Path $path_backup_files_W -ItemType Directory | Out-Null  
          
@@ -33,10 +33,10 @@ Else
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Удаляем все файлы с диска Y:\PER
+# Удаляем все файлы с диска Y:\PSC
 (Get-Date).ToString()+" операция: - удаление всех файлов с диска Y:\$NameDB " | out-file -Filepath $path_backup_log -append
 
-# Проверяем существует ли путь Y:\PER
+# Проверяем существует ли путь Y:\PSC
 if (test-path $path_backup_files_Y)
 {          
             $Files_y = Get-ChildItem -Recurse -Path $path_backup_files_Y -file | % { $_.FullName } | Out-String  #Получаем список файлов LOG-backup для удаления
@@ -46,7 +46,7 @@ if (test-path $path_backup_files_Y)
 
 Else
 {
-    # Если не существует путь Y:\PER
+    # Если не существует путь Y:\PSC
     (Get-Date).ToString()+" - Директория Y:\$NameDB : Не существует, будет создана" | out-file -Filepath $path_backup_log -append
     New-Item -Path $path_backup_files_Y -ItemType Directory | Out-Null  
      
@@ -54,10 +54,10 @@ Else
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Удаляем все файлы с диска Z:\PER
+# Удаляем все файлы с диска Z:\PSC
 (Get-Date).ToString()+" операция: - удаление всех файлов с диска Z:\$NameDB " | out-file -Filepath $path_backup_log -append
 
-# Проверяем существует ли путь Z:\PER
+# Проверяем существует ли путь Z:\PSC
 if (test-path $path_backup_files_Z)
 {          
             $Files_z = Get-ChildItem -Recurse -Path $path_backup_files_Z -file | % { $_.FullName } | Out-String  #Получаем список файлов LOG-backup для удаления
@@ -67,7 +67,7 @@ if (test-path $path_backup_files_Z)
 
 Else
 {
-    # Если не существует путь Z:\PER
+    # Если не существует путь Z:\PSC
     (Get-Date).ToString()+" - Директория Z:\$NameDB : Не существует, будет создана" | out-file -Filepath $path_backup_log -append
     New-Item -Path $path_backup_files_Z -ItemType Directory | Out-Null     
 }

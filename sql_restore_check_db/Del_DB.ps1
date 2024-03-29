@@ -1,4 +1,4 @@
-﻿$NameDB="PYL"
+﻿$NameDB="PSC"
 
 <#
 $query = "EXEC msdb.dbo.sp_delete_database_backuphistory @database_name = $NameDB
