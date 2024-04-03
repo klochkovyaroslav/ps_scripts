@@ -8,10 +8,10 @@ $a=$env:compuPSCname.split("-")[-0]
 $b=$env:compuPSCname.split("-")[-2]
 $s_name= $a+"-"+$b
 $path_backup_files_Y="Y:\$NameDB" #Путь до директории с файлами бэкапа
-$path_backup_log = "C:\Scripts\Full_events.txt" #Расположения лога выполнения скрипта
+$path_backup_log = $PSScriptRoot+"\Full_events.txt" #Расположения лога выполнения скрипта
 $smb_path_backup_files_Y="\\$remote_host\Y$\$NameDB\"
-$SQL_FULL="C:\scripts\SQL_Full.sql"
-$SQL_LOG="C:\scripts\SQL_LOG.sql"
+$SQL_FULL=$PSScriptRoot+"\SQL_Full.sql"
+$SQL_LOG=$PSScriptRoot+"\SQL_LOG.sql"
 #Дата с которой сравнивать. В этом случае -24 часа от текущей даты
 $actual_date = (Get-Date).AddMinutes(-1438)
 $ErrorActionPreference= "stop"
