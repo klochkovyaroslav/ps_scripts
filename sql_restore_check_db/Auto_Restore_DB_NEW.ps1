@@ -1,5 +1,5 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
-$NameDB="BIP"
+$NameDB="E03"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
@@ -10,6 +10,7 @@ $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "stop"
+Clear-Variable -Name "Error"
 
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
@@ -223,7 +224,7 @@ del $rezult
 #-------------------------------------------------------DELETE DATABASE--------------------------------------------------------------------------------------------------
 Start-Sleep -Seconds 10
 
-$query="EXEC msdb.dbo.sp_delete_database_backuphistory @database_name = '$NameDB'
+$query_del_db="EXEC msdb.dbo.sp_delete_database_backuphistory @database_name = '$NameDB'
 GO
 use [$NameDB];
 GO
@@ -237,6 +238,33 @@ USE [master]
 GO
 DROP DATABASE [$NameDB]
 GO"
-Invoke-Sqlcmd -ServerInstance localhost -Database $NameDB -SuppressProviderContextWarning $query
+Invoke-Sqlcmd -ServerInstance localhost -Database $NameDB -SuppressProviderContextWarning $query_del_db
 WriteLog "Удаление БД: $NameDB завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
+
+#-------------------------------------------------------DELETE TEMP LOG FILES IF ERROR--------------------------------------------------------------------------------------------------
+del $rezult_EL
+del $rezult_FO
+del $rezult
+if (-not($null -eq $Error))
+{
+"В процессе выполнения скрипта возникли ошибка"
+Clear-Variable -Name "Error"
+
+    if (test-path $rezult_EL)
+    {
+    del $rezult_EL
+    }
+    if (test-path $rezult_FO)
+    {
+    del $rezult_FO
+    }
+    if (test-path $rezult)
+    {
+    del $rezult
+    }
+}
+else
+{
+"В процессе выполнения скрипта ошибок не обнаружено "
+}
