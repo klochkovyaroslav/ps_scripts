@@ -1,8 +1,7 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
 $NameDB="E03"
 
-$rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
-$rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
+
 $tmp_f = $PSScriptRoot+"\tmp.txt"
 $rest_db = $PSScriptRoot+"\restore_db.sql"
 $rezult = $PSScriptRoot+"\RESTORE_SQL_REZULT.txt"
@@ -122,143 +121,15 @@ else
     WriteLog $str_search_RES
     "----------------------------------------------------------"| out-file -Filepath $Logfile -append
 }
-
-$str_search=(Get-Item -Path $rezult | Get-Content -Tail 3)[-1]
-$str_search
-$pattern = $time_res_total
-if ($str_search -match $pattern)
-{
-
-    #-------------------------------------------------------CHECKDB_WITH_PHYSICAL_ONLY--------------------------------------------------------------------------------------------------
-
-    $watch = [System.Diagnostics.Stopwatch]::StartNew()
-    $watch.Start() #Запуск таймера
-
-    if (test-path $rezult_FO)
-    {
-    del $rezult_FO
-    $QUERY_PHYSICAL_ONLY = "DBCC CHECKDB ($NameDB) WITH PHYSICAL_ONLY, MAXDOP =8"
-    #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK PHYSICAL ONLY" +  "`n" | out-file -Filepath $rezult_FO -append
-    Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_PHYSICAL_ONLY -Verbose 4>&1 | out-file -Filepath $rezult_FO -append
-    ''| out-file -Filepath $rezult_FO -append
-    #(Get-Date).ToString()+" - окончание выполнения FULL-скрипта: CHECK PHYSICAL ONLY"| out-file -Filepath $rezult_FO -append
-    }
-    else
-    {
-    $QUERY_PHYSICAL_ONLY = "DBCC CHECKDB ($NameDB) WITH PHYSICAL_ONLY, MAXDOP =8"
-    #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK PHYSICAL ONLY" +  "`n" | out-file -Filepath $rezult_FO -append
-    Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_PHYSICAL_ONLY -Verbose 4>&1 | out-file -Filepath $rezult_FO -append
-    ''| out-file -Filepath $rezult_FO -append
-    #(Get-Date).ToString()+" - окончание выполнения FULL-скрипта: CHECK PHYSICAL ONLY"| out-file -Filepath $rezult_FO -append
-    }
-    $watch.Stop() #Остановка таймера
-    'Время выполнения: '+ (($watch.Elapsed).ToString()).Split('.')[0] | out-file -Filepath $rezult_FO -append
-    $str_search_FO=(Get-Item -Path $rezult_FO | Get-Content -Tail 5)
-    $str_search_FO= $str_search_FO | Out-String
-    $pattern = "DBCC execution completed"
-    if ($str_search_FO -match $pattern) 
-    {
-        WriteLog 'Проверка: CHECKDB_WITH_PHYSICAL_ONLY завершена - Успешно'
-        WriteLog $str_search_FO
-        "----------------------------------------------------------"| out-file -Filepath $Logfile -append
-    }
-    else
-    {
-        WriteLog "Проверка: CHECKDB_WITH_PHYSICAL_ONLY завершена - с Ошибками"
-        WriteLog $str_search_FO
-        "----------------------------------------------------------"| out-file -Filepath $Logfile -append
-    }
-
-    #-------------------------------------------------------CHECKDB_WITH_EXTENDED_LOGICAL--------------------------------------------------------------------------------------------------
-
-    $time_el_start = (Get-Date)
-    if (test-path $rezult_EL)
-    {
-    del $rezult_EL
-    $QUERY_EXTENDED_LOGICAL = "DBCC CHECKDB ($NameDB) with EXTENDED_LOGICAL_CHECKS, MAXDOP =8"
-    #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK EXTENDED_LOGICAL" +  "`n" | out-file -Filepath $rezult_EL -append
-    Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_EXTENDED_LOGICAL -Verbose 4>&1 | out-file -Filepath $rezult_EL -append
-    ''| out-file -Filepath $rezult_EL -append
-    #(Get-Date).ToString()+" - окончание выполнения скрипта: CHECK EXTENDED_LOGICAL"| out-file -Filepath $rezult_EL -append
-    }
-    else
-    {
-    $QUERY_EXTENDED_LOGICAL = "DBCC CHECKDB ($NameDB) with EXTENDED_LOGICAL_CHECKS, MAXDOP =8"
-    #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK EXTENDED_LOGICAL" +  "`n" | out-file -Filepath $rezult_EL -append
-    Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_EXTENDED_LOGICAL -Verbose 4>&1 | out-file -Filepath $rezult_EL -append
-    ''| out-file -Filepath $rezult_EL -append
-    #(Get-Date).ToString()+" - окончание выполнения скрипта: CHECK EXTENDED_LOGICAL"| out-file -Filepath $rezult_EL -append
-    }
-    $time_el_stop = (Get-Date)
-    $time_el_total=($time_el_stop-$time_el_start).ToString().Split('.')[0]
-    'Время выполнения: '+ $time_el_total | out-file -Filepath $rezult_EL -append
-
-
-    $str_search_EL=(Get-Item -Path $rezult_EL | Get-Content -Tail 4)
-    $str_search_EL= $str_search_EL | Out-String
-    $pattern = "DBCC execution completed"
-    if ($str_search_EL -match $pattern) 
-    {
-        WriteLog 'Проверка: CHECKDB_WITH_EXTENDED_LOGICAL завершена - Успешно'
-        WriteLog $str_search_EL
-        "----------------------------------------------------------"| out-file -Filepath $Logfile -append
-    }
-    else
-    {
-        WriteLog "Проверка: CHECKDB_WITH_EXTENDED_LOGICAL завершена - с Ошибками"
-        WriteLog $str_search_EL
-        "----------------------------------------------------------"| out-file -Filepath $Logfile -append        
-    }
-}
-
-else
-{
-Write-Host "Совпадение не найдено."
-WriteLog "БД НЕ восстановлена, невозможно запустить SQL скрипты для проверки БД"
-}
-
 #-------------------------------------------------------DELETE TEMP LOG--------------------------------------------------------------------------------------------------
-del $rezult_EL
-del $rezult_FO
 del $rezult
-#-------------------------------------------------------DELETE DATABASE--------------------------------------------------------------------------------------------------
-Start-Sleep -Seconds 10
 
-$query_del_db="EXEC msdb.dbo.sp_delete_database_backuphistory @database_name = '$NameDB'
-GO
-use [$NameDB];
-GO
-use [master];
-GO
-USE [master]
-GO
-ALTER DATABASE [$NameDB] SET  SINGLE_USER WITH ROLLBACK IMMEDIATE
-GO
-USE [master]
-GO
-DROP DATABASE [$NameDB]
-GO"
-Invoke-Sqlcmd -ServerInstance localhost -Database $NameDB -SuppressProviderContextWarning $query_del_db
-WriteLog "Удаление БД: $NameDB завершено - Успешно"
-"----------------------------------------------------------" | out-file -Filepath $Logfile -append
 
 #-------------------------------------------------------DELETE TEMP LOG FILES IF ERROR--------------------------------------------------------------------------------------------------
-del $rezult_EL
-del $rezult_FO
-del $rezult
 if (-not($null -eq $Error))
 {
 "В процессе выполнения скрипта возникли ошибка"
 Clear-Variable -Name "Error"
-
-    if (test-path $rezult_EL)
-    {
-    del $rezult_EL
-    }
-    if (test-path $rezult_FO)
-    {
-    del $rezult_FO
-    }
     if (test-path $rezult)
     {
     del $rezult
@@ -266,5 +137,5 @@ Clear-Variable -Name "Error"
 }
 else
 {
-"В процессе выполнения скрипта ошибок не обнаружено "
+"В процессе выполнения скрипта ошибок не обнаружено"
 }
