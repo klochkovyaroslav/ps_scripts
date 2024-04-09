@@ -9,7 +9,7 @@ $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "stop"
-Clear-Variable -Name "Error"
+$Error.Clear()
 
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
@@ -128,8 +128,19 @@ del $rezult
 #-------------------------------------------------------DELETE TEMP LOG FILES IF ERROR--------------------------------------------------------------------------------------------------
 if (-not($null -eq $Error))
 {
-"В процессе выполнения скрипта возникли ошибка"
-Clear-Variable -Name "Error"
+"В процессе выполнения скрипта возникла ошибка"
+WriteLog "Удаление временных файлов завершено - Успешно"
+"----------------------------------------------------------" | out-file -Filepath $Logfile -append
+#$Error.Clear()
+
+    if (test-path $rezult_EL)
+    {
+    del $rezult_EL
+    }
+    if (test-path $rezult_FO)
+    {
+    del $rezult_FO
+    }
     if (test-path $rezult)
     {
     del $rezult
@@ -137,5 +148,7 @@ Clear-Variable -Name "Error"
 }
 else
 {
-"В процессе выполнения скрипта ошибок не обнаружено"
+"В процессе выполнения скрипта ошибок не обнаружено "
+WriteLog "Удаление временных файлов завершено - Успешно"
+"----------------------------------------------------------" | out-file -Filepath $Logfile -append
 }

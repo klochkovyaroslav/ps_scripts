@@ -1,12 +1,25 @@
 ﻿######################################################## CHECKDB_WITH_EXTENDED_LOGICAL #################################################################################################
-$NameDB="E03"
+$NameDB="test_KB"
 
 
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
 $ErrorActionPreference= "stop"
-Clear-Variable -Name "Error"
+$Error.Clear()
 
 
+#-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
+$Logfile = $PSScriptRoot+"\DB_RESTORE_CHECKDB_LOG.txt"
+function WriteLog
+{
+    Param ([string]$LogString)
+    $Stamp = (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
+    $LogMessage = "$Stamp $LogString"
+    Add-content $LogFile -value $LogMessage
+}
+if (test-path $Logfile)
+{
+del $Logfile
+}
 
 
     $time_el_start = (Get-Date)

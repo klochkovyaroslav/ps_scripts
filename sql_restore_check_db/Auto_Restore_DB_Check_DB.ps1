@@ -1,5 +1,5 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
-$NameDB="E03"
+$NameDB="PTM"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
@@ -10,7 +10,7 @@ $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "stop"
-Clear-Variable -Name "Error"
+$Error.Clear()
 
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ WriteLog "Удаление БД: $NameDB завершено - Успешно"
 if (-not($null -eq $Error))
 {
 "В процессе выполнения скрипта возникла ошибка"
-Clear-Variable -Name "Error"
+#$Error.Clear()
 
     if (test-path $rezult_EL)
     {
