@@ -8,7 +8,7 @@ $rezult = $PSScriptRoot+"\RESTORE_SQL_REZULT.txt"
 $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
-$ErrorActionPreference= "stop"
+$ErrorActionPreference= "Continue"
 $Error.Clear()
 
 

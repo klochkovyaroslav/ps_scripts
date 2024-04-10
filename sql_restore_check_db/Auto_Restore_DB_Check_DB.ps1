@@ -1,5 +1,5 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
-$NameDB="PTM"
+$NameDB="PYL"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
@@ -9,7 +9,7 @@ $rezult = $PSScriptRoot+"\RESTORE_SQL_REZULT.txt"
 $path_backup_files_Y="Y:\$NameDB\"
 $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
-$ErrorActionPreference= "stop"
+$ErrorActionPreference= "Continue"
 $Error.Clear()
 
 
@@ -66,12 +66,36 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 #-------------------------------------------------------RESTORE DATABASE + TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
-                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 4>&1 | out-file -Filepath $rezult
+                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 2>&1 4>&1 | out-file -Filepath $rezult
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
-                "`n"+'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
-                del $rest_db
 
+
+
+                $query_state_db="SELECT state_desc 
+                FROM    sys.databases
+                WHERE Name = '$NameDB'
+                GO"
+
+                $fff=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
+                $fff=$fff[0] | Out-String
+
+                if (($fff[0]) -eq "ONLINE")
+
+                {
+                "БД восстановлена, в состоянии: $fff"
+                'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
+                del $rest_db
+                }
+
+                else
+                {
+                "БД не восстановлена, в состоянии: $fff"
+                'БД не восстановлена, в состоянии: $fff'| out-file -Filepath $rezult -append
+                del $rest_db
+                exit
+                }
+                
             }#4_1
        }#3
        else
@@ -246,6 +270,8 @@ WriteLog "Удаление БД: $NameDB завершено - Успешно"
 if (-not($null -eq $Error))
 {
 "В процессе выполнения скрипта возникла ошибка"
+WriteLog "Удаление временных файлов завершено - Успешно"
+"----------------------------------------------------------" | out-file -Filepath $Logfile -append
 #$Error.Clear()
 
     if (test-path $rezult_EL)
@@ -264,4 +290,6 @@ if (-not($null -eq $Error))
 else
 {
 "В процессе выполнения скрипта ошибок не обнаружено "
+WriteLog "Удаление временных файлов завершено - Успешно"
+"----------------------------------------------------------" | out-file -Filepath $Logfile -append
 }

@@ -3,7 +3,7 @@ $NameDB="test_KB"
 
 
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
-$ErrorActionPreference= "stop"
+#$ErrorActionPreference= "stop"
 $Error.Clear()
 
 
