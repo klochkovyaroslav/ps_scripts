@@ -1,6 +1,5 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
-$NameDB="E03"
-
+$NameDB="PSE"
 
 $tmp_f = $PSScriptRoot+"\tmp.txt"
 $rest_db = $PSScriptRoot+"\restore_db.sql"
@@ -10,7 +9,7 @@ $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "Continue"
 $Error.Clear()
-
+Write-Output "The value is[$Error]"
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
 $Logfile = $PSScriptRoot+"\DB_RESTORE_CHECKDB_LOG.txt"
@@ -23,13 +22,13 @@ function WriteLog
 }
 if (test-path $Logfile)
 {
-del $Logfile
+Remove-Item $Logfile
 }
 #-------------------------------------------------------CREATE SQL-RESTORE SCRIPT---------------------------------------------------------------------------------------------------
 if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
 {#1
     #WriteLog "да папки существуют"
-    if (-not( ls -Recurse -Path $path_backup_files_Y -Include "*.bak") -and ( ls -Recurse -Path $path_backup_files_Z -Include "*.bak"))
+    if (-not( Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak") -and ( Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak"))
     {#2
         WriteLog "файлы *bak НЕ найдены на диске Y или Z"
     }#2
@@ -38,16 +37,16 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
     {#2_1
        if (test-path $path_backup_files_W)
        {#3
-            if (-not( ls -Recurse -Path $path_backup_files_W -Include "*.trn"))
+            if (-not( Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn"))
             {#4
                 WriteLog "файлы *trn НЕ найдены на диске W"
 
             }#4
             else
             {#4_1 Генерирование скрипта SQL С цепочкой файлов логов транзакций
-                $Files_y = Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak" 
-                $Files_z = Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak" 
-                $Files_w = Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn" 
+                $Files_y = Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak"
+                $Files_z = Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak"
+                $Files_w = Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn"
 
                 'USE [master]' | out-file -Filepath $tmp_f -append
                 'RESTORE DATABASE ' + '['+ $NameDB +']' +' FROM ' | out-file -Filepath $tmp_f -append
@@ -61,15 +60,39 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 $str_del=(Get-Item -Path $tmp_f | Get-Content -Tail 1)
                 ((Get-Content -path $tmp_f).replace($str_del, $srt_chg)) | Out-File $rest_db
                 "`n"+'GO' | Out-File $rest_db  -append
-                del $tmp_f
-                #-------------------------------------------------------RESTORE DATABASE--------------------------------------------------------------------------------------------
+                Remove-Item $tmp_f
+                #-------------------------------------------------------RESTORE DATABASE + TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
-                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 4>&1 | out-file -Filepath $rezult
+                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 2>&1 4>&1 | out-file -Filepath $rezult
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
-                "`n"+'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
-                del $rest_db
+
+
+
+                $query_state_db="SELECT state_desc
+                FROM    sys.databases
+                WHERE Name = '$NameDB'
+                GO"
+
+                $db_status=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
+                #$db_status=($db_status[0] | Out-String).Trim()
+
+                if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
+
+                {
+                "БД восстановлена, в состоянии: $db_status"
+                'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
+                Remove-Item $rest_db
+                }
+
+                else
+                {
+                "БД не восстановлена, в состоянии: $db_status"
+                "БД не восстановлена, в состоянии: $db_status"| out-file -Filepath $rezult -append
+                Remove-Item $rest_db
+                exit
+                }
 
             }#4_1
        }#3
@@ -84,14 +107,14 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 'DISK=' + "`'" + $Files_y.fullName +  "`'," | out-file -Filepath $rest_db -append
                 'DISK=' + "`'" + $Files_z.fullName +  "`'" + ' WITH  FILE = 1, NOUNLOAD, STATS = 5'+ "`n" | out-file -Filepath $rest_db -append
                 'GO' | Out-File $rest_db  -append
-                #-------------------------------------------------------RESTORE DATABASE--------------------------------------------------------------------------------------------
+                #-------------------------------------------------------RESTORE DATABASE WITHOUT TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
                 Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 4>&1 | out-file -Filepath $rezult
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
                 "`n"+'Время восстановления БД : '+ $time_res_total| out-file -Filepath $rezult -append
-                del $rest_db
+                Remove-Item $rest_db
        }#3_1
 
     }#2_1
@@ -126,13 +149,11 @@ del $rezult
 
 
 #-------------------------------------------------------DELETE TEMP LOG FILES IF ERROR--------------------------------------------------------------------------------------------------
-if (-not($null -eq $Error))
+if ($Error)
 {
 "В процессе выполнения скрипта возникла ошибка"
 WriteLog "Удаление временных файлов завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
-#$Error.Clear()
-
     if (test-path $rezult_EL)
     {
     del $rezult_EL
@@ -152,3 +173,5 @@ else
 WriteLog "Удаление временных файлов завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
 }
+
+Write-Output "The value is[$Error]"

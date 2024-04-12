@@ -1,5 +1,5 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
-$NameDB="PYL"
+$NameDB="PSE"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
@@ -11,7 +11,7 @@ $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "Continue"
 $Error.Clear()
-
+Write-Output "The value is[$Error]"
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
 $Logfile = $PSScriptRoot+"\DB_RESTORE_CHECKDB_LOG.txt"
@@ -24,13 +24,13 @@ function WriteLog
 }
 if (test-path $Logfile)
 {
-del $Logfile
+Remove-Item $Logfile
 }
 #-------------------------------------------------------CREATE SQL-RESTORE SCRIPT---------------------------------------------------------------------------------------------------
 if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
 {#1
     #WriteLog "да папки существуют"
-    if (-not( ls -Recurse -Path $path_backup_files_Y -Include "*.bak") -and ( ls -Recurse -Path $path_backup_files_Z -Include "*.bak"))
+    if (-not( Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak") -and ( Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak"))
     {#2
         WriteLog "файлы *bak НЕ найдены на диске Y или Z"
     }#2
@@ -39,16 +39,16 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
     {#2_1
        if (test-path $path_backup_files_W)
        {#3
-            if (-not( ls -Recurse -Path $path_backup_files_W -Include "*.trn"))
+            if (-not( Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn"))
             {#4
                 WriteLog "файлы *trn НЕ найдены на диске W"
 
             }#4
             else
             {#4_1 Генерирование скрипта SQL С цепочкой файлов логов транзакций
-                $Files_y = Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak" 
-                $Files_z = Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak" 
-                $Files_w = Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn" 
+                $Files_y = Get-ChildItem -Recurse -Path $path_backup_files_Y -Include "*.bak"
+                $Files_z = Get-ChildItem -Recurse -Path $path_backup_files_Z -Include "*.bak"
+                $Files_w = Get-ChildItem -Recurse -Path $path_backup_files_W -Include "*.trn"
 
                 'USE [master]' | out-file -Filepath $tmp_f -append
                 'RESTORE DATABASE ' + '['+ $NameDB +']' +' FROM ' | out-file -Filepath $tmp_f -append
@@ -62,7 +62,7 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 $str_del=(Get-Item -Path $tmp_f | Get-Content -Tail 1)
                 ((Get-Content -path $tmp_f).replace($str_del, $srt_chg)) | Out-File $rest_db
                 "`n"+'GO' | Out-File $rest_db  -append
-                del $tmp_f
+                Remove-Item $tmp_f
                 #-------------------------------------------------------RESTORE DATABASE + TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
@@ -72,30 +72,30 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
 
 
 
-                $query_state_db="SELECT state_desc 
+                $query_state_db="SELECT state_desc
                 FROM    sys.databases
                 WHERE Name = '$NameDB'
                 GO"
 
-                $fff=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
-                $fff=$fff[0] | Out-String
+                $db_status=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
+                #$db_status=($db_status[0] | Out-String).Trim()
 
-                if (($fff[0]) -eq "ONLINE")
+                if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
 
                 {
-                "БД восстановлена, в состоянии: $fff"
+                "БД восстановлена, в состоянии: $db_status"
                 'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
-                del $rest_db
+                Remove-Item $rest_db
                 }
 
                 else
                 {
-                "БД не восстановлена, в состоянии: $fff"
-                'БД не восстановлена, в состоянии: $fff'| out-file -Filepath $rezult -append
-                del $rest_db
+                "БД не восстановлена, в состоянии: $db_status"
+                "БД не восстановлена, в состоянии: $db_status"| out-file -Filepath $rezult -append
+                Remove-Item $rest_db
                 exit
                 }
-                
+
             }#4_1
        }#3
        else
@@ -116,7 +116,7 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
                 "`n"+'Время восстановления БД : '+ $time_res_total| out-file -Filepath $rezult -append
-                del $rest_db
+                Remove-Item $rest_db
        }#3_1
 
     }#2_1
@@ -160,7 +160,7 @@ if ($str_search -match $pattern)
 
     if (test-path $rezult_FO)
     {
-    del $rezult_FO
+    Remove-Item $rezult_FO
     $QUERY_PHYSICAL_ONLY = "DBCC CHECKDB ($NameDB) WITH PHYSICAL_ONLY, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK PHYSICAL ONLY" +  "`n" | out-file -Filepath $rezult_FO -append
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_PHYSICAL_ONLY -Verbose 4>&1 | out-file -Filepath $rezult_FO -append
@@ -180,7 +180,7 @@ if ($str_search -match $pattern)
     $str_search_FO=(Get-Item -Path $rezult_FO | Get-Content -Tail 5)
     $str_search_FO= $str_search_FO | Out-String
     $pattern = "DBCC execution completed"
-    if ($str_search_FO -match $pattern) 
+    if ($str_search_FO -match $pattern)
     {
         WriteLog 'Проверка: CHECKDB_WITH_PHYSICAL_ONLY завершена - Успешно'
         WriteLog $str_search_FO
@@ -198,7 +198,7 @@ if ($str_search -match $pattern)
     $time_el_start = (Get-Date)
     if (test-path $rezult_EL)
     {
-    del $rezult_EL
+    Remove-Item $rezult_EL
     $QUERY_EXTENDED_LOGICAL = "DBCC CHECKDB ($NameDB) with EXTENDED_LOGICAL_CHECKS, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK EXTENDED_LOGICAL" +  "`n" | out-file -Filepath $rezult_EL -append
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_EXTENDED_LOGICAL -Verbose 4>&1 | out-file -Filepath $rezult_EL -append
@@ -221,7 +221,7 @@ if ($str_search -match $pattern)
     $str_search_EL=(Get-Item -Path $rezult_EL | Get-Content -Tail 4)
     $str_search_EL= $str_search_EL | Out-String
     $pattern = "DBCC execution completed"
-    if ($str_search_EL -match $pattern) 
+    if ($str_search_EL -match $pattern)
     {
         WriteLog 'Проверка: CHECKDB_WITH_EXTENDED_LOGICAL завершена - Успешно'
         WriteLog $str_search_EL
@@ -231,20 +231,23 @@ if ($str_search -match $pattern)
     {
         WriteLog "Проверка: CHECKDB_WITH_EXTENDED_LOGICAL завершена - с Ошибками"
         WriteLog $str_search_EL
-        "----------------------------------------------------------"| out-file -Filepath $Logfile -append        
+        "----------------------------------------------------------"| out-file -Filepath $Logfile -append
     }
 }
 
 else
 {
-Write-Host "Совпадение не найдено."
+Write-Output "Совпадение не найдено."
 WriteLog "БД НЕ восстановлена, невозможно запустить SQL скрипты для проверки БД"
 }
 
 #-------------------------------------------------------DELETE TEMP LOG--------------------------------------------------------------------------------------------------
-del $rezult_EL
-del $rezult_FO
-del $rezult
+Remove-Item $rezult_EL
+Remove-Item $rezult_FO
+Remove-Item $rezult
+
+#Write-Output "The value is[$Error]"
+
 #-------------------------------------------------------DELETE DATABASE--------------------------------------------------------------------------------------------------
 Start-Sleep -Seconds 10
 
@@ -266,14 +269,15 @@ Invoke-Sqlcmd -ServerInstance localhost -Database $NameDB -SuppressProviderConte
 WriteLog "Удаление БД: $NameDB завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
 
+
+#Write-Output "The value is[$Error]"
+
 #-------------------------------------------------------DELETE TEMP LOG FILES IF ERROR--------------------------------------------------------------------------------------------------
-if (-not($null -eq $Error))
+if ($Error)
 {
 "В процессе выполнения скрипта возникла ошибка"
 WriteLog "Удаление временных файлов завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
-#$Error.Clear()
-
     if (test-path $rezult_EL)
     {
     del $rezult_EL
@@ -293,3 +297,4 @@ else
 WriteLog "Удаление временных файлов завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
 }
+#Write-Output "The value is[$Error]"
