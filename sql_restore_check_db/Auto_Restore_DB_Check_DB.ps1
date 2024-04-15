@@ -11,7 +11,8 @@ $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "Continue"
 $Error.Clear()
-Write-Output "The value is[$Error]"
+
+
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
 $Logfile = $PSScriptRoot+"\DB_RESTORE_CHECKDB_LOG.txt"
@@ -26,6 +27,12 @@ if (test-path $Logfile)
 {
 Remove-Item $Logfile
 }
+
+#-------------------------------------------------------CREATE SQL-CHECK-STATUS SCRIPT---------------------------------------------------------------------------------------------------
+$query_state_db="SELECT state_desc
+    FROM sys.databases
+    WHERE Name = '$NameDB'
+    GO"
 #-------------------------------------------------------CREATE SQL-RESTORE SCRIPT---------------------------------------------------------------------------------------------------
 if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
 {#1
@@ -70,27 +77,21 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
 
-
-
-                $query_state_db="SELECT state_desc
-                FROM    sys.databases
-                WHERE Name = '$NameDB'
-                GO"
+                #-------------------------------------------------------CHECKING RESTORED DATABASE + TRANSACTION LOG CORRECTLY------------------------------------------------------------------------
 
                 $db_status=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
-                #$db_status=($db_status[0] | Out-String).Trim()
-
-                if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
-
+                $db_status=($db_status[0] | Out-String).Trim()
+                #if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
+                if ($db_status -eq "ONLINE")
                 {
-                "БД восстановлена, в состоянии: $db_status"
-                'Время восстановления БД + цепочки файлов транзакций : '+ $time_res_total| out-file -Filepath $rezult -append
+                Write-Output "БД восстановлена, в состоянии: $db_status"
+                'Время восстановления БД + цепочки файлов транзакций :'+ $time_res_total| out-file -Filepath $rezult -append
                 Remove-Item $rest_db
                 }
 
                 else
                 {
-                "БД не восстановлена, в состоянии: $db_status"
+                Write-Output "БД НЕ восстановлена, в состоянии: $db_status"
                 "БД не восстановлена, в состоянии: $db_status"| out-file -Filepath $rezult -append
                 Remove-Item $rest_db
                 exit
@@ -112,11 +113,27 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 #-------------------------------------------------------RESTORE DATABASE WITHOUT TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
-                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 4>&1 | out-file -Filepath $rezult
+                Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 2>&1 4>&1 | out-file -Filepath $rezult
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
-                "`n"+'Время восстановления БД : '+ $time_res_total| out-file -Filepath $rezult -append
+
+                #-------------------------------------------------------CHECKING RESTORED DATABASE ONLY CORRECTLY------------------------------------------------------------------------
+
+                $db_status=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
+                if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
+                {
+                Write-Output "БД восстановлена, в состоянии: $db_status"
+                'Время восстановления БД + цепочки файлов транзакций :'+ $time_res_total| out-file -Filepath $rezult -append
                 Remove-Item $rest_db
+                }
+
+                else
+                {
+                Write-Output "БД НЕ восстановлена, в состоянии: $db_status"
+                "БД не восстановлена, в состоянии: $db_status"| out-file -Filepath $rezult -append
+                Remove-Item $rest_db
+                exit
+                }
        }#3_1
 
     }#2_1
@@ -276,20 +293,20 @@ WriteLog "Удаление БД: $NameDB завершено - Успешно"
 if ($Error)
 {
 "В процессе выполнения скрипта возникла ошибка"
-WriteLog "Удаление временных файлов завершено - Успешно"
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
     if (test-path $rezult_EL)
     {
-    del $rezult_EL
+    Remove-Item $rezult_EL
     }
     if (test-path $rezult_FO)
     {
-    del $rezult_FO
+    Remove-Item $rezult_FO
     }
     if (test-path $rezult)
     {
-    del $rezult
+    Remove-Item $rezult
     }
+    WriteLog "Удаление временных файлов завершено - Успешно"
 }
 else
 {
