@@ -1,4 +1,8 @@
 ﻿######################################################## RESTORE DATABASE And CHECK DB ##############################################################################################
+$timer_script = [System.Diagnostics.Stopwatch]::StartNew()
+$timer_script.Start() #Запуск таймера
+
+
 $NameDB="PSE"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
@@ -315,3 +319,5 @@ WriteLog "Удаление временных файлов завершено - 
 "----------------------------------------------------------" | out-file -Filepath $Logfile -append
 }
 #Write-Output "The value is[$Error]"
+$timer_script.Stop()
+'Общее время выполнения скрипта: '+ (($timer_script.Elapsed).ToString()).Split('.')[0]
