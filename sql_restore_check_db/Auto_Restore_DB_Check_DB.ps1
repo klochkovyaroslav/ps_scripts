@@ -3,7 +3,7 @@ $timer_script = [System.Diagnostics.Stopwatch]::StartNew()
 $timer_script.Start() #Запуск таймера
 
 
-$NameDB="PSE"
+$NameDB="SLJ"
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
