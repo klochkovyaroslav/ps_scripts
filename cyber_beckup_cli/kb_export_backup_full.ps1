@@ -1,4 +1,5 @@
-﻿$timer_script = [System.Diagnostics.Stopwatch]::StartNew()
+﻿####################################### !!! EXPORT !!! #######################################
+$timer_script = [System.Diagnostics.Stopwatch]::StartNew()
 $timer_script.Start()
 #---------------------------------------------------------
 
@@ -9,7 +10,7 @@ $p_target="\\10.250.2.53\share_test\export\" #Требуется указать
 #---------------------------------------------------------
 
 $yesterday= (Get-Date).AddDays(-2).ToString('dd.MM.yyyy')
-$cred="user_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zHj9v96kUx0TDaLxLjbQHtA==,encrypted"
+$cred="svc_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zEj9iue1Qze47NsmsdqHmGcK5JH0wAD3VA==,encrypted"
 $path_backup_log= $PSScriptRoot+"\export_log.txt" #Расположения лога выполнения скрипта
 #---------------------------------------------------------
 $list_archives=((& acrocmd.exe list archives --loc=$p_loc --credentials=$cred --output=raw).Split('	') | Select-String -Pattern $name_srv)[0]
