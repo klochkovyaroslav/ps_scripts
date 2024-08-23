@@ -2,7 +2,7 @@
 $name_srv="ads-prd"
 $pd_loc="\\10.250.2.53\share_test\export\"
 #---------------------------------------------------------
-$cred="svc_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zEj9iue1Qze47NsmsdqHmGcK5JH0wAD3VA==,encrypted"
+$cred="user_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zHj9v96kUx0TDaLxLjbQHtA==,encrypted"
 $path_delete_log= $PSScriptRoot+"\delete_log.txt" #Расположения лога выполнения скрипта
 #---------------------------------------------------------
 
