@@ -3,7 +3,13 @@ $timer_script = [System.Diagnostics.Stopwatch]::StartNew()
 $timer_script.Start() #Запуск таймера
 
 
-$NameDB="SLJ"
+$NameDB="GTH"
+$name_srv="gth-prd-db2"
+$p_loc="\\192.168.2.51\SQL-PRD-SRC1-r60\"
+
+$dest_host_rec="192.168.2.162"
+$cred="user_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zHj9v96kUx0TDaLxLjbQHtA==,encrypted"
+
 
 $rezult_FO = $PSScriptRoot+"\PHYSICAL_ONLY_rezult.txt"
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
@@ -15,7 +21,6 @@ $path_backup_files_Z="Z:\$NameDB\"
 $path_backup_files_W="W:\$NameDB\"
 $ErrorActionPreference= "Continue"
 $Error.Clear()
-
 
 
 #-------------------------------------------------------Function "WriteLog"---------------------------------------------------------------------------------------------------------
@@ -31,6 +36,38 @@ if (test-path $Logfile)
 {
 Remove-Item $Logfile
 }
+
+#-------------------------------------------------------RECOVERY FILES FROM CYBER BACKUP SCRIPT------------------------------------------------------------------------------------------
+
+start-job -scriptblock {
+
+    $NameDB="GTH"
+    $name_srv="gth-prd-db2"
+    $p_loc="\\192.168.2.51\SQL-PRD-SRC1-r60\"
+
+    $dest_host_rec="192.168.2.162"
+    $cred="user_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zHj9v96kUx0TDaLxLjbQHtA==,encrypted"
+    
+    $list_archives= ((& acrocmd.exe list archives --loc=$p_loc --credentials=$cred --output=raw).Split('	') | Select-String -Pattern $name_srv)
+    $list_all_full_backups=(& acrocmd.exe list backups --loc=$p_loc --credentials=$cred --arc=$list_archives --filter_type=full --output=raw)
+    $last_full_backup=$list_all_full_backups[-3]
+    $last_full_backup=($list_all_full_backups[-3].Split('	')[0])
+    & acrocmd.exe recover file --loc=$p_loc --credentials=$cred --arc=$list_archives --backup=$last_full_backup --file=Y:\$NameDB --target=Y:\ --host=$dest_host_rec --credentials=$cred --overwrite=always --progress
+    }
+    ######################################################################################################################################################
+  
+        
+    $list_archives= ((& acrocmd.exe list archives --loc=$p_loc --credentials=$cred --output=raw).Split('	') | Select-String -Pattern $name_srv)
+    $list_all_full_backups=(& acrocmd.exe list backups --loc=$p_loc --credentials=$cred --arc=$list_archives --filter_type=full --output=raw)
+    $last_full_backup=$list_all_full_backups[-3]
+    $last_full_backup=($list_all_full_backups[-3].Split('	')[0])  
+    & acrocmd.exe recover file --loc=$p_loc --credentials=$cred --arc=$list_archives --backup=$last_full_backup --file=Z:\$NameDB --target=Z:\ --host=$dest_host_rec --credentials=$cred --overwrite=always --progress
+    "Пауза 10 мин"
+    Start-Sleep -Seconds 600
+    "файл на Y"
+    Get-ChildItem -Recurse -Path $path_backup_files_Y
+    "файл на Z"
+    Get-ChildItem -Recurse -Path $path_backup_files_Z
 
 #-------------------------------------------------------CREATE SQL-CHECK-STATUS SCRIPT---------------------------------------------------------------------------------------------------
 $query_state_db="SELECT state_desc
@@ -77,7 +114,9 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 #-------------------------------------------------------RESTORE DATABASE + TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
+                "Запущено восстановление БД в SQL: " + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
                 Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 2>&1 4>&1 | out-file -Filepath $rezult
+
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
 
@@ -117,6 +156,7 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 #-------------------------------------------------------RESTORE DATABASE WITHOUT TRANSACTION LOG--------------------------------------------------------------------------------------------
 
                 $time_res_start = (Get-Date)
+                "Запущено восстановление БД в SQL :" + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
                 Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database "master" -InputFile $rest_db -Verbose 2>&1 4>&1 | out-file -Filepath $rezult
                 $time_res_stop = (Get-Date)
                 $time_res_total=($time_res_stop-$time_res_start).ToString().Split('.')[0]
@@ -124,10 +164,11 @@ if ((test-path $path_backup_files_Y) -and (test-path $path_backup_files_Z))
                 #-------------------------------------------------------CHECKING RESTORED DATABASE ONLY CORRECTLY------------------------------------------------------------------------
 
                 $db_status=Invoke-Sqlcmd -ServerInstance localhost -Database master -SuppressProviderContextWarning $query_state_db
-                if (($db_status[0] | Out-String).Trim() -eq "ONLINE")
+                $db_status=($db_status[0] | Out-String).Trim()
+                if ($db_status -eq "ONLINE")
                 {
                 Write-Output "БД восстановлена, в состоянии: $db_status"
-                'Время восстановления БД + цепочки файлов транзакций :'+ $time_res_total| out-file -Filepath $rezult -append
+                'Время восстановления БД :'+ $time_res_total| out-file -Filepath $rezult -append
                 Remove-Item $rest_db
                 }
 
@@ -184,6 +225,7 @@ if ($str_search -match $pattern)
     Remove-Item $rezult_FO
     $QUERY_PHYSICAL_ONLY = "DBCC CHECKDB ($NameDB) WITH PHYSICAL_ONLY, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK PHYSICAL ONLY" +  "`n" | out-file -Filepath $rezult_FO -append
+    "Запущена проверка 'CHECKDB_WITH_PHYSICAL_ONLY':" + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_PHYSICAL_ONLY -Verbose 4>&1 | out-file -Filepath $rezult_FO -append
     ''| out-file -Filepath $rezult_FO -append
     #(Get-Date).ToString()+" - окончание выполнения FULL-скрипта: CHECK PHYSICAL ONLY"| out-file -Filepath $rezult_FO -append
@@ -192,6 +234,7 @@ if ($str_search -match $pattern)
     {
     $QUERY_PHYSICAL_ONLY = "DBCC CHECKDB ($NameDB) WITH PHYSICAL_ONLY, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK PHYSICAL ONLY" +  "`n" | out-file -Filepath $rezult_FO -append
+    "Запущена проверка 'CHECKDB_WITH_PHYSICAL_ONLY':" + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_PHYSICAL_ONLY -Verbose 4>&1 | out-file -Filepath $rezult_FO -append
     ''| out-file -Filepath $rezult_FO -append
     #(Get-Date).ToString()+" - окончание выполнения FULL-скрипта: CHECK PHYSICAL ONLY"| out-file -Filepath $rezult_FO -append
@@ -222,6 +265,7 @@ if ($str_search -match $pattern)
     Remove-Item $rezult_EL
     $QUERY_EXTENDED_LOGICAL = "DBCC CHECKDB ($NameDB) with EXTENDED_LOGICAL_CHECKS, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK EXTENDED_LOGICAL" +  "`n" | out-file -Filepath $rezult_EL -append
+    "Запущена проверка 'CHECKDB_WITH_EXTENDED_LOGICAL':" + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_EXTENDED_LOGICAL -Verbose 4>&1 | out-file -Filepath $rezult_EL -append
     ''| out-file -Filepath $rezult_EL -append
     #(Get-Date).ToString()+" - окончание выполнения скрипта: CHECK EXTENDED_LOGICAL"| out-file -Filepath $rezult_EL -append
@@ -230,6 +274,7 @@ if ($str_search -match $pattern)
     {
     $QUERY_EXTENDED_LOGICAL = "DBCC CHECKDB ($NameDB) with EXTENDED_LOGICAL_CHECKS, MAXDOP =8"
     #(Get-Date).ToString()+" - начало выполнения SQL-скрипта: CHECK EXTENDED_LOGICAL" +  "`n" | out-file -Filepath $rezult_EL -append
+    "Запущена проверка 'CHECKDB_WITH_EXTENDED_LOGICAL':" + (Get-Date).toString("dd/MM/yyyy HH:mm:ss")
     Invoke-Sqlcmd -ServerInstance localhost -Querytimeout 0 -Database $NameDB -SuppressProviderContextWarning $QUERY_EXTENDED_LOGICAL -Verbose 4>&1 | out-file -Filepath $rezult_EL -append
     ''| out-file -Filepath $rezult_EL -append
     #(Get-Date).ToString()+" - окончание выполнения скрипта: CHECK EXTENDED_LOGICAL"| out-file -Filepath $rezult_EL -append

@@ -1,6 +1,6 @@
 ﻿####################################### !!! DELETE !!! #######################################
 $name_srv="ads-prd"
-$pd_loc="\\10.250.2.53\share_test\export\"
+$pd_loc="\\192.168.2.53\share_test\export\"
 #---------------------------------------------------------
 $cred="user_backup,xh/jPO8NNCde71oQLxFgHNj1MOs3zHj9v96kUx0TDaLxLjbQHtA==,encrypted"
 $path_delete_log= $PSScriptRoot+"\delete_log.txt" #Расположения лога выполнения скрипта

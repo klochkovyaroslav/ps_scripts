@@ -5,8 +5,8 @@ $timer_script.Start()
 
 
 $name_srv="ads-prd"#Требуется указать
-$p_loc="\\10.250.2.51\SQL-PRD-SRC1-r60\" #Требуется указать
-$p_target="\\10.250.2.53\share_test\export\" #Требуется указать
+$p_loc="\\192.168.2.51\SQL-PRD-SRC1-r60\" #Требуется указать
+$p_target="\\192.168.2.53\share_test\export\" #Требуется указать
 #---------------------------------------------------------
 
 $yesterday= (Get-Date).AddDays(-2).ToString('dd.MM.yyyy')

@@ -1,5 +1,5 @@
 ﻿######################################################## CHECKDB_WITH_EXTENDED_LOGICAL #################################################################################################
-$NameDB="test_KB"
+$NameDB="SLM"
 
 
 $rezult_EL = $PSScriptRoot+"\EXTENDED_LOGICAL_rezult.txt"
